@@ -1,0 +1,30 @@
+copy the following kernel code to common/msp to compatible symphony.
+you should update these while update kernel, copy the new to replace these.
+
+1, common/drv/memdev/drv_memdev.c
+copy uncached_access and phys_mem_access_prot from kernel/linux4.4.1/drivers/char/mem.c
+
+2, kernel/linux4.4.1/arch/mips/include/asm/io.h
+copy phys_to_page from kernel/linux4.4.1/arch/arm/include/asm/memory.h
+
+3, kernel/linux4.4.1/arch/mips/kernel/setup.c kernel/linux4.4.1/include/linux/poison.h
+add vramfs_init into bootmem_init in setup.c to reserve vramfs
+set the "vramfs=size@addr" into bootargs, size and addr must align to page
+note "mem=size" range must cover vramfs, vramfs must not overlay with mmz, "mem=120m mmz=mmz=ddr,0,0,48M vramfs=16m@40m" is work good.
+add POISON_VRAMFS into poison.h
+
+
+
+
+
+
+
+boot symphony:
+setenv mtdparts mtdparts=mt_sf:64k(btinit.img),512k(uboot.img),64k(boot.scr),384k(av_cpu.img),3200k(kernel.img),3904k(usrfs.img),64k(data.img)
+setenv memargs mem=120M mmz=ddr,0,0,32M vramfs vramfs=16M@56M
+setenv bootargs console=ttyS0,115200n8r cpuclock=54M no_console_suspend init=/sbin/bootchartd $memargs apppart=mtdblock5 appfs=squashfs $mtdparts
+usb start
+fatload usb 0 0x80700000 uImage
+bootm 0x80700000
+
+
