@@ -1,0 +1,67 @@
+#!/bin/bash
+
+function set_glibc_env()
+{
+
+    echo "start set_glibc_env"
+        awk '{gsub(/UCLIBC=uclibc/,"#use glibc");print}' mk.sh > tmp.mk
+        mv tmp.mk mk.sh
+        chmod +x mk.sh
+        if [ $MONTAGE_CHIP = "symphony" ]; then
+          awk '{gsub(/CFG_MT_GST_SUPLAYER_SUPPORT=n/,"CFG_MT_GST_SUPLAYER_SUPPORT=y");print}' cfg.mk > tmp.cfg
+          mv tmp.cfg cfg.mk
+        fi
+#        cd kernel/linux3.18/arch/mips/configs/
+#        awk '{gsub(/mdev.uclibc.app.cpio/,"mdev.glibc.app.cpio");print}' symphony_defconfig > tmp.symphony_defconfig
+#        mv tmp.symphony_defconfig symphony_defconfig
+#        cd -
+    echo "end set_glibc_env"
+
+}
+
+function set_uclibc_env()
+{
+
+    echo "start set_uclibc_env"
+        awk '{gsub(/#use glibc/,"UCLIBC=uclibc");print}' mk.sh > tmp.mk
+        mv tmp.mk mk.sh
+        chmod +x mk.sh
+        awk '{gsub(/CFG_MT_GST_SUPLAYER_SUPPORT=y/,"CFG_MT_GST_SUPLAYER_SUPPORT=n");print}' cfg.mk > tmp.cfg
+        mv tmp.cfg cfg.mk
+#        cd kernel/linux3.18/arch/mips/configs/
+#        awk '{gsub(/mdev.glibc.app.cpio/,"mdev.uclibc.app.cpio");print}' symphony_defconfig > tmp.symphony_defconfig
+#        mv tmp.symphony_defconfig symphony_defconfig
+#        cd -
+    echo "end set_uclibc_env"
+
+}
+
+if [ $# -ge "1" ]; then
+	if [ $1 = "aria" ]; then
+		export MONTAGE_CHIP=aria
+		echo "MONTAGE_CHIP=${MONTAGE_CHIP}"
+	else
+		if [ $1 = "symphony" ]; then
+			export MONTAGE_CHIP=symphony
+			echo "MONTAGE_CHIP=${MONTAGE_CHIP}"
+
+                        if [ $# -eq "2" ]; then
+                              if [ $2 == "glibc" ]; then
+                                 set_glibc_env $2;
+                              else
+                                 if [ $2 == "uclibc" ]; then
+                                    set_uclibc_env $2;
+                                 fi
+                              fi
+                        else
+                              set_glibc_env $2;
+                        fi
+		else
+			echo -e "only support \e[0;32maria\e[m and \e[0;32msymphony\e[m"
+		fi
+	fi
+
+	export MONTAGE_CHIP_ALL="aria symphony"
+else
+	echo -e "\e[0;32msource envsetup aria\e[m or \e[0;32msource envsetup symphony\e[m"
+fi

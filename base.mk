@@ -1,0 +1,107 @@
+ifeq ($(SDK_CFGFILE),)
+SDK_CFGFILE=cfg.mk
+endif
+
+include $(SDK_DIR)/$(SDK_CFGFILE)
+
+ifeq (${MONTAGE_CHIP},aria)
+CROSS_COMPILE ?=arm-linux-gnueabihf-
+else
+ifeq (${MONTAGE_CHIP},symphony)
+CROSS_COMPILE ?=mips-linux-gnu-
+endif
+endif
+CONFIG_CROSS_COMPILE=${TOOLCHAIN_PATH}/${CROSS_COMPILE}
+
+
+AR=${CONFIG_CROSS_COMPILE}ar
+AS=${CONFIG_CROSS_COMPILE}as
+CPP=${CONFIG_CROSS_COMPILE}cpp
+ifeq (${MONTAGE_CHIP},aria)
+	LD=${CONFIG_CROSS_COMPILE}ld
+	CXX=${CONFIG_CROSS_COMPILE}g++
+	CC=${CONFIG_CROSS_COMPILE}gcc
+else
+	ifeq (${MONTAGE_CHIP},symphony)
+		LD=${CONFIG_CROSS_COMPILE}ld ${EL} ${MUCLIBC} ${MFLOAT}
+		CXX=${CONFIG_CROSS_COMPILE}g++ ${EL} ${MUCLIBC} ${MFLOAT}
+		CC=${CONFIG_CROSS_COMPILE}gcc ${EL} ${MUCLIBC} ${MFLOAT}
+	endif
+endif
+RANLIB=${CONFIG_CROSS_COMPILE}ranlib
+NM=${CONFIG_CROSS_COMPILE}nm
+STRIP=${CONFIG_CROSS_COMPILE}strip
+OBJCOPY=${CONFIG_CROSS_COMPILE}objcopy
+READELF=${CONFIG_CROSS_COMPILE}readelf
+OBJDUMP=${CONFIG_CROSS_COMPILE}objdump
+CFG_MT_BASE_ENV+=" AR AS LD CPP CC RANLIB NM STRIP OBJCOPY OBJDUMP "
+
+
+
+ifeq ($(CFG_MT_OPTM_SIZE_SUPPORT),y)
+CFG_MT_CFLAGS = -Os -ffunction-sections -fdata-sections
+else
+CFG_MT_CFLAGS = -O2
+endif
+
+ifeq ($(CFG_MT_DEBUG),y)
+CFG_MT_CFLAGS += -g
+endif
+
+CFG_MT_CFLAGS += -fPIC
+CFG_MT_CFLAGS += -Wall -Wextra -Wformat=2 -Wstrict-aliasing=2 -Wstrict-prototypes -Wmissing-prototypes -Wshadow -Wwrite-strings -Wconversion -Wfloat-equal -Wpointer-arith -Wswitch-enum -Wcast-qual -Winline -Wundef -Wunreachable-code -Wredundant-decls -Waggregate-return
+CFG_MT_CFLAGS += -DUSE_AEC -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -D_FORTIFY_SOURCE=1
+
+ifeq (${MONTAGE_CHIP},symphony)
+CFG_MT_CFLAGS += -DCONFIG_MONTAGE_SYMPHONY
+else
+ifeq (${MONTAGE_CHIP},aria)
+CFG_MT_CFLAGS += -DCONFIG_ARCH_ARIA
+endif
+endif
+
+COMMON_UNF_INCLUDE = ${COMMON_DIR}/inc
+COMMON_API_INCLUDE = ${COMMON_DIR}/api/inc
+COMMON_DRV_INCLUDE = ${COMMON_DIR}/drv/inc
+MSP_UNF_INCLUDE = ${MSP_DIR}/inc
+MSP_API_INCLUDE = ${MSP_DIR}/api/inc
+MSP_DRV_INCLUDE = ${MSP_DIR}/drv/inc
+AT := @
+
+
+
+ifeq ($(CFG_MT_WDG_SUPPORT),y)
+CFG_MT_KMOD_CFLAGS += -DMT_WDG_SUPPORT
+endif
+
+ifeq ($(CFG_MT_WDG_SUPPORT),y)
+CFG_MT_KMOD_CFLAGS += -DMT_MTEST_SUPPORT
+endif
+
+ifeq ($(CFG_MT_PROC_SUPPORT),y)
+CFG_MT_KMOD_CFLAGS += -DMT_PROC_SUPPORT=1
+endif
+
+ifeq ($(CONFIG_EMU),y)
+CFG_MT_KMOD_CFLAGS += -DCONFIG_EMU=1
+endif
+
+ifeq (${MONTAGE_CHIP},symphony)
+SMART_HTTP_PTOTOCOL = y
+CFG_MT_CFLAGS += -DSMART_HTTP_PTOTOCOL
+endif
+
+CFG_MT_CFLAGS+=-DENABLE_OPEN_SSL
+
+ifeq (${CFG_DEBUG_V_IMG_FLOW},y)
+CFG_MT_CFLAGS += -DCFG_DEBUG_V_IMG_FLOW
+CFG_MT_KMOD_CFLAGS += -DCFG_DEBUG_V_IMG_FLOW
+endif
+
+ifeq (${CFG_DEBUG_V_BUF_STAT},y)
+CFG_MT_KMOD_CFLAGS += -DCFG_DEBUG_V_BUF_STAT
+endif
+
+ifeq (${CFG_DUMP_V_ES_BUF},y)
+CFG_MT_KMOD_CFLAGS += -DCFG_DUMP_V_ES_BUF
+endif

@@ -1,0 +1,19 @@
+.PHONY: all clean install uninstall distclean prepare $(SUBDIRS)
+
+all: prepare $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@ all
+
+clean:
+	set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
+
+install:
+	set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
+
+uninstall:
+	set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i uninstall; done
+
+distclean:
+	set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i distclean; done
+
