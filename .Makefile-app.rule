@@ -1,0 +1,83 @@
+ifneq ($(HEADER_FILES),)
+ifeq ($(INCLUDE_PARENT_DIR),y)
+HEADER_FILES:=$(subst $(CURDIR)/,,$(HEADER_FILES))
+endif
+endif
+
+DEPENDS=$(OBJS:.o=.d)
+
+CXXFLAGS=$(CFLAGS)
+
+.PHONY: all clean install uninstall distclean prepare
+
+all: prepare $(APP)
+
+$(APP): $(OBJS)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+clean:
+	$(AT)rm -f $(DEPENDS)
+	$(AT)rm -f $(DEPENDS:.d=.tmp)
+	$(AT)rm -f $(OBJS)
+	$(AT)rm -f $(APP)
+ifneq ($(CLEAN_EXTRA),)
+	$(AT)rm -f $(CLEAN_EXTRA)
+endif
+
+distclean:
+
+install:
+ifneq ($(HEADER_FILES),)
+ifneq ($(INCLUDE_SUB_DIR),)
+	$(AT)mkdir -p ${INCLUDE_DIR}/$(INCLUDE_SUB_DIR)
+endif
+ifeq ($(INCLUDE_PARENT_DIR),y)
+	cp -arf --parents $(HEADER_FILES) ${INCLUDE_DIR}/$(INCLUDE_SUB_DIR)
+else
+	cp -arf $(HEADER_FILES) ${INCLUDE_DIR}/$(INCLUDE_SUB_DIR)
+endif
+endif
+	$(AT)mkdir -p $(BIN_DIR)
+	cp -f $(APP) $(BIN_DIR)
+
+uninstall:
+	$(AT)rm -f $(BIN_DIR)/$(APP)
+ifneq ($(HEADER_FILES),)
+	$(foreach file, $(HEADER_FILES), $(AT)rm -rf $(INCLUDE_DIR)/$(INCLUDE_SUB_DIR)/$(notdir $(file)))
+ifneq ($(INCLUDE_SUB_DIR),)
+	$(AT)rm -rf ${INCLUDE_DIR}/$(INCLUDE_SUB_DIR)
+endif
+endif
+
+
+%.o: %.c
+	$(AT)$(CC) $(CFLAGS) -MM $< > $(@:.o=.tmp)
+	$(AT)sed 's|.*\.o\:|$@\:|g' < $(@:.o=.tmp) > $(@:.o=.d)
+	$(AT)rm -f $(@:.o=.tmp)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+%.o: %.cpp
+	$(AT)$(CXX) $(CXXFLAGS) -MM $< > $(@:.o=.tmp)
+	$(AT)sed 's|.*\.o\:|$@\:|g' < $(@:.o=.tmp) > $(@:.o=.d)
+	$(AT)rm -f $(@:.o=.tmp)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+%.o: %.cxx
+	$(AT)$(CXX) $(CXXFLAGS) -MM $< > $(@:.o=.tmp)
+	$(AT)sed 's|.*\.o\:|$@\:|g' < $(@:.o=.tmp) > $(@:.o=.d)
+	$(AT)rm -f $(@:.o=.tmp)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+%.o: %.S
+	$(AT)$(CC) $(CFLAGS) -MM $< > $(@:.o=.tmp)
+	$(AT)sed 's|.*\.o\:|$@\:|g' < $(@:.o=.tmp) > $(@:.o=.d)
+	$(AT)rm -f $(@:.o=.tmp)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),uninstall)
+ifneq ($(MAKECMDGOALS),distclean)
+sinclude $(DEPENDS)
+endif
+endif
+endif
